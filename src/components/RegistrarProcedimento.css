@@ -1,0 +1,178 @@
+.registrar-container {
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 20px;
+  padding-bottom: 100px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background-color: #f5f5f7;
+  min-height: 100vh;
+}
+
+.registrar-header {
+  margin-bottom: 24px;
+}
+
+.registrar-title {
+  font-size: 24px;
+  font-weight: 700;
+  color: #1a1a1a;
+  margin: 0 0 4px 0;
+}
+
+.registrar-subtitle {
+  font-size: 14px;
+  color: #666;
+  margin: 0;
+}
+
+.mensagem {
+  padding: 12px 16px;
+  border-radius: 12px;
+  margin-bottom: 16px;
+  font-weight: 500;
+}
+
+.mensagem.sucesso {
+  background-color: rgba(34, 197, 94, 0.15);
+  color: #16a34a;
+}
+
+.mensagem.erro {
+  background-color: rgba(239, 68, 68, 0.15);
+  color: #dc2626;
+}
+
+.registrar-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.form-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1a1a1a;
+}
+
+.form-select,
+.form-input,
+.form-textarea {
+  padding: 14px 16px;
+  border-radius: 12px;
+  border: 1px solid #e0e0e0;
+  background-color: #fff;
+  font-size: 16px;
+  color: #1a1a1a;
+  transition: border-color 0.2s;
+}
+
+.form-select:focus,
+.form-input:focus,
+.form-textarea:focus {
+  outline: none;
+  border-color: #007AFF;
+}
+
+.form-select:disabled {
+  background-color: #f0f0f5;
+  color: #999;
+}
+
+.form-textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+
+.radio-group {
+  display: flex;
+  gap: 12px;
+}
+
+.radio-btn {
+  flex: 1;
+  padding: 14px;
+  border-radius: 12px;
+  border: 2px solid #e0e0e0;
+  background-color: #fff;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.radio-btn.sucesso:hover {
+  border-color: #22c55e;
+}
+
+.radio-btn.falha:hover {
+  border-color: #ef4444;
+}
+
+.radio-btn.sucesso.selected {
+  border-color: #22c55e;
+  background-color: rgba(34, 197, 94, 0.1);
+  color: #16a34a;
+}
+
+.radio-btn.falha.selected {
+  border-color: #ef4444;
+  background-color: rgba(239, 68, 68, 0.1);
+  color: #dc2626;
+}
+
+.tentativas-control {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.tentativas-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  border: 1px solid #e0e0e0;
+  background-color: #fff;
+  font-size: 20px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.tentativas-btn:hover {
+  background-color: #f0f0f5;
+}
+
+.tentativas-valor {
+  font-size: 20px;
+  font-weight: 700;
+  min-width: 30px;
+  text-align: center;
+}
+
+.submit-btn {
+  padding: 16px;
+  border-radius: 14px;
+  border: none;
+  background-color: #007AFF;
+  color: #fff;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-top: 8px;
+}
+
+.submit-btn:hover {
+  background-color: #0066DD;
+}
+
+.submit-btn:disabled {
+  background-color: #999;
+  cursor: not-allowed;
+}

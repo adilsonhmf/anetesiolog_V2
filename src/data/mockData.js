@@ -1,48 +1,89 @@
 export const mockSummary = {
-  total: 47,
-  successes: 38,
-  successRate: 80.9,
+  total: 0,
+  successes: 0,
+  successRate: 0,
   byProcedureGroup: [
     {
       groupLabel: "Via Aérea",
       category: "via_aerea",
-      items: [
-        { label: "Intubação Orotraqueal", total: 25, successes: 22, successRate: 88 },
-        { label: "Máscara Laríngea", total: 8, successes: 7, successRate: 87.5 },
-        { label: "Videolaringoscopia", total: 5, successes: 4, successRate: 80 },
-      ]
+      items: []
     },
     {
       groupLabel: "Bloqueios Regionais",
       category: "regional",
-      items: [
-        { label: "Raquianestesia", total: 12, successes: 10, successRate: 83.3 },
-        { label: "Peridural", total: 6, successes: 4, successRate: 66.7 },
-        { label: "Bloqueio de Plexo Braquial", total: 3, successes: 2, successRate: 66.7 },
-      ]
+      items: []
     },
     {
       groupLabel: "Acessos Vasculares",
       category: "acesso",
-      items: [
-        { label: "Acesso Venoso Central", total: 8, successes: 6, successRate: 75 },
-        { label: "Punção Arterial", total: 5, successes: 5, successRate: 100 },
-      ]
+      items: []
     }
   ],
-  failureProcedures: [
-    { type: "Peridural", subtype: null, total: 6, successRate: 66.7 },
-    { type: "Bloqueio de Plexo Braquial", subtype: null, total: 3, successRate: 66.7 },
-  ]
+  failureProcedures: []
 };
 
-export const mockTimeline = [
-  { label: "2026-03-01", total: 5, successes: 4 },
-  { label: "2026-03-05", total: 7, successes: 6 },
-  { label: "2026-03-08", total: 4, successes: 3 },
-  { label: "2026-03-12", total: 8, successes: 7 },
-  { label: "2026-03-15", total: 6, successes: 5 },
-  { label: "2026-03-18", total: 9, successes: 8 },
-  { label: "2026-03-20", total: 5, successes: 4 },
-  { label: "2026-03-21", total: 3, successes: 3 },
-];
+export const mockTimeline = [];
+
+// Função para calcular estatísticas a partir dos dados salvos
+export function calcularEstatisticas() {
+  const procedimentos = JSON.parse(localStorage.getItem("procedimentos") || "[]");
+  
+  if (procedimentos.length === 0) {
+    return mockSummary;
+  }
+
+  const total = procedimentos.length;
+  const successes = procedimentos.filter(p => p.sucesso).length;
+  const successRate = total > 0 ? (successes / total) * 100 : 0;
+
+  // Agrupar por categoria
+  const categorias = {
+    "Via Aérea": { category: "via_aerea", items: {} },
+    "Bloqueios Regionais": { category: "regional", items: {} },
+    "Acessos Vasculares": { category: "acesso", items: {} }
+  };
+
+  procedimentos.forEach(p => {
+    if (categorias[p.categoria]) {
+      if (!categorias[p.categoria].items[p.procedimento]) {
+        categorias[p.categoria].items[p.procedimento] = { total: 0, successes: 0 };
+      }
+      categorias[p.categoria].items[p.procedimento].total++;
+      if (p.sucesso) {
+        categorias[p.categoria].items[p.procedimento].successes++;
+      }
+    }
+  });
+
+  const byProcedureGroup = Object.entries(categorias).map(([groupLabel, data]) => ({
+    groupLabel,
+    category: data.category,
+    items: Object.entries(data.items).map(([label, stats]) => ({
+      label,
+      total: stats.total,
+      successes: stats.successes,
+      successRate: stats.total > 0 ? (stats.successes / stats.total) * 100 : 0
+    }))
+  }));
+
+  // Procedimentos com menor taxa de sucesso (< 80%)
+  const allProcedures = byProcedureGroup.flatMap(g => g.items);
+  const failureProcedures = allProcedures
+    .filter(p => p.total >= 1 && p.successRate < 80)
+    .sort((a, b) => a.successRate - b.successRate)
+    .slice(0, 3)
+    .map(p => ({
+      type: p.label,
+      subtype: null,
+      total: p.total,
+      successRate: p.successRate
+    }));
+
+  return {
+    total,
+    successes,
+    successRate,
+    byProcedureGroup,
+    failureProcedures
+  };
+}

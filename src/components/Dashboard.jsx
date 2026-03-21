@@ -1,7 +1,7 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { StatCard } from "./StatCard";
 import { useTheme } from "../hooks/useTheme";
-import { mockSummary, mockTimeline } from "../data/mockData";
+import { calcularEstatisticas } from "../data/mockData";
 import "./Dashboard.css";
 
 function getSuccessColor(rate, total) {
@@ -52,7 +52,6 @@ function ProcedureItemRow({ label, total, successes, successRate }) {
 
 function ProcedureGroupCard({ group }) {
   const [expanded, setExpanded] = useState(true);
-  const { colors } = useTheme();
   
   const groupTotal = group.items.reduce((s, i) => s + i.total, 0);
   const groupSuccesses = group.items.reduce((s, i) => s + i.successes, 0);
@@ -74,8 +73,10 @@ function ProcedureGroupCard({ group }) {
         <div className="group-info">
           <span className="group-label">{group.groupLabel}</span>
           <span className="group-meta">
-            {groupTotal} procedimento{groupTotal !== 1 ? "s" : ""}
-            {groupTotal > 0 ? ` · ${groupRate.toFixed(0)}% sucesso` : ""}
+            {groupTotal > 0 
+              ? `${groupTotal} procedimento${groupTotal !== 1 ? "s" : ""} · ${groupRate.toFixed(0)}% sucesso`
+              : "Nenhum registro ainda"
+            }
           </span>
         </div>
         <div className="group-right">
@@ -88,7 +89,7 @@ function ProcedureGroupCard({ group }) {
         </div>
       </div>
 
-      {expanded && (
+      {expanded && group.items.length > 0 && (
         <div className="group-body">
           {group.items.map((item, idx) => (
             <React.Fragment key={item.label}>
@@ -103,20 +104,45 @@ function ProcedureGroupCard({ group }) {
           ))}
         </div>
       )}
+
+      {expanded && group.items.length === 0 && (
+        <div className="group-body empty">
+          <p className="empty-text">Nenhum procedimento registrado nesta categoria.</p>
+        </div>
+      )}
     </div>
   );
 }
 
 export function Dashboard() {
   const { colors } = useTheme();
-  const summary = mockSummary;
+  const [summary, setSummary] = useState(calcularEstatisticas());
+
+  // Atualiza quando a página ganha foco (usuário volta da tela de registrar)
+  useEffect(() => {
+    const handleFocus = () => {
+      setSummary(calcularEstatisticas());
+    };
+
+    window.addEventListener('focus', handleFocus);
+    
+    // Também atualiza a cada 2 segundos (para pegar novos registros)
+    const interval = setInterval(() => {
+      setSummary(calcularEstatisticas());
+    }, 2000);
+
+    return () => {
+      window.removeEventListener('focus', handleFocus);
+      clearInterval(interval);
+    };
+  }, []);
 
   return (
     <div className="dashboard">
       <div className="header-row">
         <div>
           <p className="greeting">Bem-vindo de volta</p>
-          <h1 className="title">AnestesioApp</h1>
+          <h1 className="title">AnestesioLog</h1>
         </div>
         <div className="avatar-circle">
           <span>🩺</span>
@@ -132,15 +158,23 @@ export function Dashboard() {
         />
         <StatCard
           label="Taxa de Sucesso Geral"
-          value={`${summary.successRate.toFixed(1)}%`}
-          accentColor={getSuccessColor(summary.successRate, summary.total)}
+          value={summary.total > 0 ? `${summary.successRate.toFixed(1)}%` : "—"}
+          accentColor={summary.total > 0 ? getSuccessColor(summary.successRate, summary.total) : "#666"}
           icon="📈"
         />
       </div>
 
+      {summary.total === 0 && (
+        <div className="empty-state">
+          <span className="empty-icon">📝</span>
+          <h3>Nenhum procedimento registrado</h3>
+          <p>Clique em <strong>Registrar</strong> para adicionar seu primeiro procedimento!</p>
+        </div>
+      )}
+
       <div className="section">
         <h2 className="section-title">Curva de Aprendizado</h2>
-        <p className="section-desc">Taxa de sucesso por procedimento · todos os registros</p>
+        <p className="section-desc">Taxa de sucesso por procedimento</p>
 
         {summary.byProcedureGroup.map((group) => (
           <ProcedureGroupCard key={group.groupLabel} group={group} />

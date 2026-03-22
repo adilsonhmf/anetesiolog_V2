@@ -34,11 +34,29 @@ export function Notas() {
       criadaEm: new Date().toISOString(),
       atualizadaEm: new Date().toISOString()
     };
-    salvarNotas([nova, ...notas]);
+    const novasNotas = [nova, ...notas];
+    salvarNotas(novasNotas);
+    // Abre direto para edição
     setNotaAtiva(nova);
     setTitulo(nova.titulo);
     setConteudo(nova.conteudo);
   };
+  
+  const handleVoltar = () => {
+    // Salva antes de voltar
+    if (notaAtiva && (titulo || conteudo)) {
+      const atualizadas = notas.map(n => 
+        n.id === notaAtiva.id 
+          ? { ...n, titulo, conteudo, atualizadaEm: new Date().toISOString() }
+          : n
+      );
+      salvarNotas(atualizadas);
+    }
+    setNotaAtiva(null);
+    setTitulo('');
+    setConteudo('');
+  };
+  
 
   const handleSelecionarNota = (nota) => {
     setNotaAtiva(nota);
@@ -81,7 +99,7 @@ export function Notas() {
       <div className="notas-container">
         <div className="nota-editor-header">
           <button className="nota-voltar" onClick={handleVoltar}>← Voltar</button>
-          <button className="nota-salvar" onClick={handleSalvar}>💾 Salvar</button>
+          <button className="nota-salvar" onClick={() => { handleSalvar(); handleVoltar(); }}>💾 Salvar</button>
         </div>
         <input
           type="text"

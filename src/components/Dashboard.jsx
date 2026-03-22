@@ -4,24 +4,9 @@ import { auth } from "../firebase";
 import "./Dashboard.css";
 
 function getSuccessColor(rate) {
-  if (rate >= 80) return "green";
-  if (rate >= 60) return "yellow";
-  return "red";
-}
-
-function calcularStreak(procedimentos, subdivisao) {
-  const procs = procedimentos
-    .filter(p => (p.procedimento || p.subdivisao) === subdivisao && p.sucesso)
-    .sort((a, b) => new Date(b.data) - new Date(a.data));
-  
-  let streak = 0;
-  for (const proc of procs) {
-    const allProcs = procedimentos.filter(p => (p.procedimento || p.subdivisao) === subdivisao);
-    const idx = allProcs.findIndex(p => p.id === proc.id);
-    if (idx === streak) streak++;
-    else break;
-  }
-  return streak;
+  if (rate >= 80) return "#10b981";
+  if (rate >= 60) return "#f59e0b";
+  return "#ef4444";
 }
 
 function calcularEstatisticas(procedimentos) {
@@ -34,10 +19,11 @@ function calcularEstatisticas(procedimentos) {
   const inicioMes = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
   const esteMes = procedimentos.filter(p => new Date(p.data) >= inicioMes).length;
 
-  // Recorde (maior número em um dia)
+  // Recorde
   const porDia = {};
   procedimentos.forEach(p => {
-    porDia[p.data] = (porDia[p.data] || 0) + 1;
+    const dataKey = p.data?.split('T')[0] || p.data;
+    porDia[dataKey] = (porDia[dataKey] || 0) + 1;
   });
   const recorde = Math.max(0, ...Object.values(porDia));
 
@@ -46,14 +32,29 @@ function calcularEstatisticas(procedimentos) {
   procedimentos.forEach(p => {
     const tipo = p.categoria || p.tipo || "Outros";
     const proc = p.procedimento || p.subdivisao || "Desconhecido";
-    if (!grupos[tipo]) grupos[tipo] = { items: {}, total: 0, successes: 0 };
-    if (!grupos[tipo].items[proc]) grupos[tipo].items[proc] = { total: 0, successes: 0 };
+    if (!grupos[tipo]) grupos[tipo] = { items: {}, total: 0, successes: 0, procedimentos: [] };
+    if (!grupos[tipo].items[proc]) grupos[tipo].items[proc] = { total: 0, successes: 0, streak: 0, procedimentos: [] };
     grupos[tipo].items[proc].total++;
+    grupos[tipo].items[proc].procedimentos.push(p);
     grupos[tipo].total++;
+    grupos[tipo].procedimentos.push(p);
     if (p.sucesso) {
       grupos[tipo].items[proc].successes++;
       grupos[tipo].successes++;
     }
+  });
+
+  // Calcular streak por subdivisão
+  Object.values(grupos).forEach(grupo => {
+    Object.values(grupo.items).forEach(item => {
+      const sorted = item.procedimentos.sort((a, b) => new Date(b.data) - new Date(a.data));
+      let streak = 0;
+      for (const p of sorted) {
+        if (p.sucesso) streak++;
+        else break;
+      }
+      item.streak = streak;
+    });
   });
 
   const byGroup = Object.entries(grupos).map(([label, data]) => ({
@@ -61,25 +62,336 @@ function calcularEstatisticas(procedimentos) {
     total: data.total,
     successes: data.successes,
     rate: data.total > 0 ? (data.successes / data.total) * 100 : 0,
+    procedimentos: data.procedimentos,
     items: Object.entries(data.items).map(([name, d]) => ({
       name,
       total: d.total,
       successes: d.successes,
       rate: d.total > 0 ? (d.successes / d.total) * 100 : 0,
-      streak: calcularStreak(procedimentos, name)
+      streak: d.streak,
+      procedimentos: d.procedimentos
     }))
   }));
 
-  return { total, successes, successRate, esteMes, recorde, byGroup };
+  // Dados semanais (últimas 4 semanas)
+  const weeklyData = [];
+  for (let i = 3; i >= 0; i--) {
+    const inicioSemana = new Date(hoje);
+    inicioSemana.setDate(hoje.getDate() - (i * 7) - hoje.getDay());
+    const fimSemana = new Date(inicioSemana);
+    fimSemana.setDate(inicioSemana.getDate() + 6);
+    
+    const procSemana = procedimentos.filter(p => {
+      const dataProc = new Date(p.data);
+      return dataProc >= inicioSemana && dataProc <= fimSemana;
+    });
+    
+    const totalSemana = procSemana.length;
+    const sucessosSemana = procSemana.filter(p => p.sucesso).length;
+    
+    weeklyData.push({
+      label: `S${4-i}`,
+      total: totalSemana,
+      successRate: totalSemana > 0 ? (sucessosSemana / totalSemana) * 100 : 0
+    });
+  }
+
+  return { total, successes, successRate, esteMes, recorde, byGroup, weeklyData };
+}
+
+// Componente Donut Chart
+function DonutChart({ successRate, total }) {
+  const circumference = 2 * Math.PI * 45;
+  const offset = circumference - (successRate / 100) * circumference;
+  
+  return (
+    <div className="donut-card">
+      <svg viewBox="0 0 100 100" className="donut-svg">
+        <circle cx="50" cy="50" r="45" fill="none" stroke="#1a1a2e" strokeWidth="10" />
+        <circle
+          cx="50" cy="50" r="45"
+          fill="none"
+          stroke="url(#donutGradient)"
+          strokeWidth="10"
+          strokeLinecap="round"
+          strokeDasharray={circumference}
+          strokeDashoffset={offset}
+          transform="rotate(-90 50 50)"
+          style={{ transition: 'stroke-dashoffset 1s ease' }}
+        />
+        <defs>
+          <linearGradient id="donutGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stopColor="#10b981" />
+            <stop offset="100%" stopColor="#06b6d4" />
+          </linearGradient>
+        </defs>
+      </svg>
+      <div className="donut-center">
+        <span className="donut-value">{total > 0 ? `${successRate.toFixed(0)}%` : '—'}</span>
+        <span className="donut-label">SUCESSO</span>
+      </div>
+    </div>
+  );
+}
+
+// Componente Gráfico de Linha
+function LineChart({ data }) {
+  if (data.length < 2 || data.every(d => d.total === 0)) {
+    return (
+      <div className="chart-card">
+        <h3 className="chart-title">📈 Evolução Semanal</h3>
+        <div className="chart-empty">
+          <p>Registre mais procedimentos para ver a evolução</p>
+        </div>
+      </div>
+    );
+  }
+
+  const maxTotal = Math.max(...data.map(d => d.total), 1);
+  
+  // Pontos para linha de procedimentos
+  const totalPoints = data.map((d, i) => {
+    const x = 10 + (i / (data.length - 1)) * 80;
+    const y = 85 - (d.total / maxTotal) * 70;
+    return `${x},${y}`;
+  }).join(' ');
+
+  // Pontos para linha de taxa de sucesso
+  const successPoints = data.map((d, i) => {
+    const x = 10 + (i / (data.length - 1)) * 80;
+    const y = 85 - (d.successRate / 100) * 70;
+    return `${x},${y}`;
+  }).join(' ');
+
+  // Área preenchida
+  const areaPoints = `10,85 ${totalPoints} 90,85`;
+
+  return (
+    <div className="chart-card">
+      <h3 className="chart-title">📈 Evolução Semanal</h3>
+      <div className="line-chart-container">
+        <svg viewBox="0 0 100 100" className="line-chart-svg">
+          {/* Grid lines */}
+          <line x1="10" y1="25" x2="90" y2="25" stroke="#2a2a3e" strokeWidth="0.5" strokeDasharray="2,2" />
+          <line x1="10" y1="55" x2="90" y2="55" stroke="#2a2a3e" strokeWidth="0.5" strokeDasharray="2,2" />
+          <line x1="10" y1="85" x2="90" y2="85" stroke="#2a2a3e" strokeWidth="0.5" />
+          
+          {/* Área preenchida */}
+          <polygon points={areaPoints} fill="url(#areaGradient)" opacity="0.3" />
+          
+          {/* Linha de procedimentos */}
+          <polyline
+            points={totalPoints}
+            fill="none"
+            stroke="#10b981"
+            strokeWidth="2.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+          
+          {/* Linha de taxa de sucesso */}
+          <polyline
+            points={successPoints}
+            fill="none"
+            stroke="#06b6d4"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeDasharray="4,2"
+          />
+          
+          {/* Pontos */}
+          {data.map((d, i) => {
+            const x = 10 + (i / (data.length - 1)) * 80;
+            const y = 85 - (d.total / maxTotal) * 70;
+            return <circle key={i} cx={x} cy={y} r="3" fill="#10b981" />;
+          })}
+          
+          <defs>
+            <linearGradient id="areaGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" stopColor="#10b981" stopOpacity="0.5" />
+              <stop offset="100%" stopColor="#10b981" stopOpacity="0" />
+            </linearGradient>
+          </defs>
+        </svg>
+        
+        {/* Labels */}
+        <div className="chart-labels">
+          {data.map((d, i) => (
+            <span key={i} className="chart-label">{d.label}</span>
+          ))}
+        </div>
+        
+        {/* Legenda */}
+        <div className="chart-legend">
+          <div className="legend-item">
+            <span className="legend-dot" style={{ background: '#10b981' }}></span>
+            <span>Procedimentos</span>
+          </div>
+          <div className="legend-item">
+            <span className="legend-dot" style={{ background: '#06b6d4' }}></span>
+            <span>Taxa Sucesso</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Componente de histórico de procedimento
+function ProcedimentoHistorico({ proc, onExcluir, excluindo }) {
+  const [expandido, setExpandido] = useState(false);
+  
+  const formatDate = (d) => {
+    if (!d) return "";
+    const date = new Date(d);
+    return date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit' });
+  };
+
+  return (
+    <div className={`historico-item ${expandido ? 'expandido' : ''}`}>
+      <div className="historico-header" onClick={() => setExpandido(!expandido)}>
+        <span className={`historico-status ${proc.sucesso ? 'success' : 'fail'}`}>
+          {proc.sucesso ? '✓' : '✗'}
+        </span>
+        <div className="historico-info">
+          <span className="historico-data">{formatDate(proc.data)}</span>
+          <span className="historico-tent">{proc.tentativas || 1} tent.</span>
+        </div>
+        {proc.tags?.length > 0 && (
+          <div className="historico-tags">
+            {proc.tags.slice(0, 2).map((tag, i) => (
+              <span key={i} className="historico-tag">{tag}</span>
+            ))}
+          </div>
+        )}
+        <span className="historico-chevron">{expandido ? '▲' : '▼'}</span>
+      </div>
+      
+      {expandido && (
+        <div className="historico-body">
+          {proc.observacoes ? (
+            <p className="historico-obs">{proc.observacoes}</p>
+          ) : (
+            <p className="historico-obs vazio">Sem observações</p>
+          )}
+          {proc.tags?.length > 0 && (
+            <div className="historico-todas-tags">
+              {proc.tags.map((tag, i) => (
+                <span key={i} className="historico-tag">{tag}</span>
+              ))}
+            </div>
+          )}
+          <button 
+            className="historico-excluir"
+            onClick={(e) => { e.stopPropagation(); onExcluir(proc); }}
+            disabled={excluindo === proc.id}
+          >
+            {excluindo === proc.id ? '...' : '🗑️ Excluir'}
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Componente de subdivisão com histórico
+function SubdivisaoItem({ item, onExcluir, excluindo }) {
+  const [showHistorico, setShowHistorico] = useState(false);
+  
+  return (
+    <div className="subdivisao-container">
+      <div className="subdivisao-header" onClick={() => setShowHistorico(!showHistorico)}>
+        <div className="subdivisao-info">
+          <h4>{item.name}</h4>
+          <span className="subdivisao-meta">
+            {item.total} proc · {item.successes} suc.
+            {item.streak > 0 && <span className="subdivisao-streak">🔥 {item.streak}</span>}
+          </span>
+        </div>
+        <div className="subdivisao-stats">
+          <div className="mini-progress">
+            <div 
+              className="mini-progress-fill" 
+              style={{ 
+                width: `${item.rate}%`,
+                background: getSuccessColor(item.rate)
+              }} 
+            />
+          </div>
+          <span className="subdivisao-rate" style={{ color: getSuccessColor(item.rate) }}>
+            {item.rate.toFixed(0)}%
+          </span>
+          <span className="subdivisao-chevron">{showHistorico ? '▲' : '▼'}</span>
+        </div>
+      </div>
+      
+      {showHistorico && (
+        <div className="subdivisao-historico">
+          <h5>📋 Histórico de {item.name}</h5>
+          {item.procedimentos
+            .sort((a, b) => new Date(b.data) - new Date(a.data))
+            .map(proc => (
+              <ProcedimentoHistorico 
+                key={proc.id} 
+                proc={proc} 
+                onExcluir={onExcluir}
+                excluindo={excluindo}
+              />
+            ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Componente de grupo/categoria
+function GrupoCard({ group, onExcluir, excluindo, cores, index }) {
+  const [expanded, setExpanded] = useState(false);
+
+  return (
+    <div className="grupo-card">
+      <div className="grupo-header" onClick={() => setExpanded(!expanded)}>
+        <div className="grupo-left">
+          <div className="grupo-icon" style={{ background: `linear-gradient(135deg, ${cores[index % cores.length]}33, ${cores[index % cores.length]}11)` }}>
+            📊
+          </div>
+          <div className="grupo-info">
+            <h3>{group.label}</h3>
+            <span className="grupo-meta">{group.total} proc · {group.successes} sucessos</span>
+          </div>
+        </div>
+        <div className="grupo-right">
+          <span className="grupo-rate" style={{ color: getSuccessColor(group.rate) }}>
+            {group.rate.toFixed(0)}%
+          </span>
+          <span className="grupo-chevron">{expanded ? '▲' : '▼'}</span>
+        </div>
+      </div>
+
+      {expanded && (
+        <div className="grupo-body">
+          {group.items.map((item, i) => (
+            <SubdivisaoItem 
+              key={i} 
+              item={item} 
+              onExcluir={onExcluir}
+              excluindo={excluindo}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
 }
 
 export function Dashboard() {
-  const [stats, setStats] = useState({ total: 0, successes: 0, successRate: 0, esteMes: 0, recorde: 0, byGroup: [] });
+  const [stats, setStats] = useState({ 
+    total: 0, successes: 0, successRate: 0, esteMes: 0, recorde: 0, byGroup: [], weeklyData: [] 
+  });
   const [procedimentos, setProcedimentos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [excluindo, setExcluindo] = useState(null);
-  const [expandedGroups, setExpandedGroups] = useState({});
-  const [filtroTag, setFiltroTag] = useState(null);
   
   // Metas
   const [metas, setMetas] = useState([]);
@@ -114,12 +426,8 @@ export function Dashboard() {
     }
   };
 
-  const toggleGroup = (label) => {
-    setExpandedGroups(prev => ({ ...prev, [label]: !prev[label] }));
-  };
-
   const handleExcluir = async (proc) => {
-    if (!window.confirm(`Excluir "${proc.procedimento || proc.subdivisao}"?`)) return;
+    if (!window.confirm(`Excluir procedimento?`)) return;
     setExcluindo(proc.id);
     try {
       await excluirProcedimento(proc.id);
@@ -160,15 +468,7 @@ export function Dashboard() {
     localStorage.setItem(`metas_${userId}`, JSON.stringify(novasMetas));
   };
 
-  const handleTagClick = (tag) => {
-    setFiltroTag(filtroTag === tag ? null : tag);
-  };
-
   const formatDate = (d) => d ? new Date(d).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }) : "";
-
-  const procedimentosFiltrados = filtroTag 
-    ? procedimentos.filter(p => p.tags?.includes(filtroTag))
-    : procedimentos;
 
   const cores = ["#10b981", "#8b5cf6", "#06b6d4", "#f59e0b", "#ec4899"];
 
@@ -187,27 +487,38 @@ export function Dashboard() {
         <div className="avatar">🩺</div>
       </div>
 
-      {/* Stats - 4 itens FIXOS */}
-      <div className="stats-row">
-        <div className="stat-card">
-          <div className="stat-icon">📋</div>
-          <p className="stat-value">{stats.total}</p>
-          <p className="stat-label">Total</p>
-        </div>
-        <div className="stat-card">
-          <div className="stat-icon">✅</div>
-          <p className="stat-value green">{stats.successRate.toFixed(0)}%</p>
-          <p className="stat-label">Sucesso</p>
-        </div>
-        <div className="stat-card">
-          <div className="stat-icon">📅</div>
-          <p className="stat-value blue">{stats.esteMes}</p>
-          <p className="stat-label">Este Mês</p>
-        </div>
-        <div className="stat-card">
-          <div className="stat-icon">🏆</div>
-          <p className="stat-value yellow">{stats.recorde}</p>
-          <p className="stat-label">Recorde</p>
+      {/* Stats com Donut */}
+      <div className="stats-visual">
+        <DonutChart successRate={stats.successRate} total={stats.total} />
+        <div className="stats-side">
+          <div className="stat-mini">
+            <span className="stat-mini-icon">📋</span>
+            <div>
+              <span className="stat-mini-label">TOTAL</span>
+              <span className="stat-mini-value">{stats.total}</span>
+            </div>
+          </div>
+          <div className="stat-mini">
+            <span className="stat-mini-icon">✅</span>
+            <div>
+              <span className="stat-mini-label">SUCESSOS</span>
+              <span className="stat-mini-value green">{stats.successes}</span>
+            </div>
+          </div>
+          <div className="stat-mini">
+            <span className="stat-mini-icon">📅</span>
+            <div>
+              <span className="stat-mini-label">ESTE MÊS</span>
+              <span className="stat-mini-value blue">{stats.esteMes}</span>
+            </div>
+          </div>
+          <div className="stat-mini">
+            <span className="stat-mini-icon">🏆</span>
+            <div>
+              <span className="stat-mini-label">RECORDE</span>
+              <span className="stat-mini-value yellow">{stats.recorde}</span>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -219,18 +530,40 @@ export function Dashboard() {
         </div>
       ) : (
         <>
+          {/* Gráfico de Barras por Categoria */}
+          <div className="chart-card">
+            <h3 className="chart-title">📊 Procedimentos por Categoria</h3>
+            <div className="bar-chart">
+              {stats.byGroup.map((g, i) => (
+                <div key={i} className="bar-row">
+                  <span className="bar-label">{g.label}</span>
+                  <div className="bar-track">
+                    <div 
+                      className="bar-fill" 
+                      style={{ 
+                        width: `${(g.total / Math.max(...stats.byGroup.map(x => x.total))) * 100}%`,
+                        background: `linear-gradient(90deg, ${cores[i % cores.length]}, ${cores[(i+1) % cores.length]})`
+                      }} 
+                    />
+                  </div>
+                  <span className="bar-value">{g.total}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Gráfico de Evolução Semanal */}
+          <LineChart data={stats.weeklyData} />
+
           {/* METAS */}
           <div className="section">
             <div className="section-header">
-              <div>
-                <h2 className="section-title">🎯 Minhas Metas</h2>
-                <p className="section-desc">Acompanhe seu progresso</p>
-              </div>
+              <h2 className="section-title">🎯 Minhas Metas</h2>
               <button className="section-action" onClick={() => setShowMetaModal(true)}>+ Nova</button>
             </div>
 
             {metas.length === 0 ? (
-              <p className="empty-metas">Nenhuma meta criada. Clique em "+ Nova"!</p>
+              <p className="empty-metas">Nenhuma meta criada ainda</p>
             ) : (
               <div className="metas-list">
                 {metas.map(meta => {
@@ -260,139 +593,23 @@ export function Dashboard() {
             )}
           </div>
 
-          {/* CURVA DE APRENDIZADO */}
+          {/* CURVA DE APRENDIZADO COM HISTÓRICO */}
           <div className="section">
             <div className="section-header">
-              <div>
-                <h2 className="section-title">📈 Curva de Aprendizado</h2>
-                <p className="section-desc">Taxa de sucesso + streak por procedimento</p>
-              </div>
+              <h2 className="section-title">📈 Curva de Aprendizado</h2>
             </div>
+            <p className="section-desc">Clique em cada item para ver o histórico completo</p>
 
             {stats.byGroup.map((group, idx) => (
-              <div key={group.label} className="learning-card">
-                <div className="learning-header" onClick={() => toggleGroup(group.label)}>
-                  <div className="learning-left">
-                    <div className="learning-icon" style={{ background: `linear-gradient(135deg, ${cores[idx % cores.length]}33, ${cores[idx % cores.length]}11)` }}>
-                      📊
-                    </div>
-                    <div className="learning-info">
-                      <h3>{group.label}</h3>
-                      <span className="learning-meta">{group.total} proc · {group.successes} sucessos</span>
-                    </div>
-                  </div>
-                  <div className="learning-right">
-                    <span className={`learning-rate ${getSuccessColor(group.rate)}`}>
-                      {group.rate.toFixed(0)}%
-                    </span>
-                    <span className="chevron">{expandedGroups[group.label] ? "▲" : "▼"}</span>
-                  </div>
-                </div>
-
-                {expandedGroups[group.label] && (
-                  <div className="learning-body">
-                    {group.items.map((item, i) => (
-                      <div key={i} className="sub-item">
-                        <div className="sub-info">
-                          <h4>{item.name}</h4>
-                          <span className="sub-meta">
-                            {item.total} proc · {item.successes} suc.
-                            {item.streak > 0 && <span className="sub-streak">🔥 {item.streak}</span>}
-                          </span>
-                        </div>
-                        <div className="sub-stats">
-                          <div className="mini-progress">
-                            <div 
-                              className="mini-progress-fill" 
-                              style={{ 
-                                width: `${item.rate}%`,
-                                background: item.rate >= 80 ? '#10b981' : item.rate >= 60 ? '#f59e0b' : '#ef4444'
-                              }} 
-                            />
-                          </div>
-                          <span className="sub-rate" style={{ color: item.rate >= 80 ? '#10b981' : item.rate >= 60 ? '#f59e0b' : '#ef4444' }}>
-                            {item.rate.toFixed(0)}%
-                          </span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
+              <GrupoCard 
+                key={group.label} 
+                group={group} 
+                onExcluir={handleExcluir}
+                excluindo={excluindo}
+                cores={cores}
+                index={idx}
+              />
             ))}
-          </div>
-
-          {/* GRÁFICO */}
-          <div className="section">
-            <div className="chart-card">
-              <h3 className="chart-title">📊 Procedimentos por Tipo</h3>
-              <div className="bar-chart">
-                {stats.byGroup.map((g, i) => (
-                  <div key={i} className="bar-row">
-                    <span className="bar-label">{g.label}</span>
-                    <div className="bar-track">
-                      <div 
-                        className="bar-fill" 
-                        style={{ 
-                          width: `${(g.total / Math.max(...stats.byGroup.map(x => x.total))) * 100}%`,
-                          background: `linear-gradient(90deg, ${cores[i % cores.length]}, ${cores[(i+1) % cores.length]})`
-                        }} 
-                      />
-                    </div>
-                    <span className="bar-value">{g.total}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          {/* ÚLTIMOS REGISTROS */}
-          <div className="section">
-            <div className="section-header">
-              <h2 className="section-title">📝 Últimos Registros</h2>
-            </div>
-
-            {filtroTag && (
-              <div className="filter-active">
-                <span className="filter-text">Filtrando por: "{filtroTag}"</span>
-                <button className="filter-clear" onClick={() => setFiltroTag(null)}>×</button>
-              </div>
-            )}
-
-            <div className="history-list">
-              {procedimentosFiltrados.slice(0, 8).map((proc, idx) => (
-                <div key={proc.id} className="history-item">
-                  <div className="history-left">
-                    <span className={`history-status ${proc.sucesso ? 'success' : 'fail'}`}>
-                      {proc.sucesso ? '✓' : '✗'}
-                    </span>
-                    <div className="history-info">
-                      <span className="history-proc">{proc.procedimento || proc.subdivisao}</span>
-                      <span className="history-meta">{proc.categoria || proc.tipo} · {proc.tentativas || 1} tent.</span>
-                      {proc.tags?.length > 0 && (
-                        <div className="history-tags">
-                          {proc.tags.map((tag, i) => (
-                            <span 
-                              key={i} 
-                              className={`history-tag tag-${i % 6}`}
-                              onClick={() => handleTagClick(tag)}
-                            >
-                              {tag}
-                            </span>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                  <div className="history-right">
-                    <span className="history-date">{formatDate(proc.data)}</span>
-                    <button className="delete-btn" onClick={() => handleExcluir(proc)} disabled={excluindo === proc.id}>
-                      {excluindo === proc.id ? '...' : '🗑️'}
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
           </div>
         </>
       )}

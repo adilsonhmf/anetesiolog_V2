@@ -36,27 +36,10 @@ export function Notas() {
     };
     const novasNotas = [nova, ...notas];
     salvarNotas(novasNotas);
-    // Abre direto para edição
     setNotaAtiva(nova);
     setTitulo(nova.titulo);
     setConteudo(nova.conteudo);
   };
-  
-  const handleVoltar = () => {
-    // Salva antes de voltar
-    if (notaAtiva && (titulo || conteudo)) {
-      const atualizadas = notas.map(n => 
-        n.id === notaAtiva.id 
-          ? { ...n, titulo, conteudo, atualizadaEm: new Date().toISOString() }
-          : n
-      );
-      salvarNotas(atualizadas);
-    }
-    setNotaAtiva(null);
-    setTitulo('');
-    setConteudo('');
-  };
-  
 
   const handleSelecionarNota = (nota) => {
     setNotaAtiva(nota);
@@ -85,8 +68,24 @@ export function Notas() {
   };
 
   const handleVoltar = () => {
+    if (notaAtiva && (titulo || conteudo)) {
+      const atualizadas = notas.map(n => 
+        n.id === notaAtiva.id 
+          ? { ...n, titulo, conteudo, atualizadaEm: new Date().toISOString() }
+          : n
+      );
+      salvarNotas(atualizadas);
+    }
+    setNotaAtiva(null);
+    setTitulo('');
+    setConteudo('');
+  };
+
+  const handleSalvarEVoltar = () => {
     handleSalvar();
     setNotaAtiva(null);
+    setTitulo('');
+    setConteudo('');
   };
 
   const formatDate = (d) => new Date(d).toLocaleDateString('pt-BR', { 
@@ -99,7 +98,7 @@ export function Notas() {
       <div className="notas-container">
         <div className="nota-editor-header">
           <button className="nota-voltar" onClick={handleVoltar}>← Voltar</button>
-          <button className="nota-salvar" onClick={() => { handleSalvar(); handleVoltar(); }}>💾 Salvar</button>
+          <button className="nota-salvar" onClick={handleSalvarEVoltar}>💾 Salvar</button>
         </div>
         <input
           type="text"
@@ -107,14 +106,12 @@ export function Notas() {
           placeholder="Título da nota"
           value={titulo}
           onChange={(e) => setTitulo(e.target.value)}
-          onBlur={handleSalvar}
         />
         <textarea
           className="nota-conteudo-input"
           placeholder="Escreva sua anotação aqui..."
           value={conteudo}
           onChange={(e) => setConteudo(e.target.value)}
-          onBlur={handleSalvar}
         />
       </div>
     );

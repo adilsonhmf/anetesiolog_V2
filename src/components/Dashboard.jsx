@@ -9,26 +9,39 @@ function getSuccessColor(rate) {
   return "red";
 }
 
+function calcularStreak(procedimentos, subdivisao) {
+  const procs = procedimentos
+    .filter(p => (p.procedimento || p.subdivisao) === subdivisao && p.sucesso)
+    .sort((a, b) => new Date(b.data) - new Date(a.data));
+  
+  let streak = 0;
+  for (const proc of procs) {
+    const allProcs = procedimentos.filter(p => (p.procedimento || p.subdivisao) === subdivisao);
+    const idx = allProcs.findIndex(p => p.id === proc.id);
+    if (idx === streak) streak++;
+    else break;
+  }
+  return streak;
+}
+
 function calcularEstatisticas(procedimentos) {
   const total = procedimentos.length;
   const successes = procedimentos.filter(p => p.sucesso).length;
   const successRate = total > 0 ? (successes / total) * 100 : 0;
 
-  // Streak
-  let streak = 0;
+  // Este mês
   const hoje = new Date();
-  hoje.setHours(0, 0, 0, 0);
-  const datasUnicas = [...new Set(procedimentos.map(p => p.data))].sort().reverse();
-  
-  for (let i = 0; i < datasUnicas.length; i++) {
-    const dataProc = new Date(datasUnicas[i]);
-    dataProc.setHours(0, 0, 0, 0);
-    const diffDias = Math.floor((hoje - dataProc) / (1000 * 60 * 60 * 24));
-    if (diffDias <= i + 1) streak++;
-    else break;
-  }
+  const inicioMes = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
+  const esteMes = procedimentos.filter(p => new Date(p.data) >= inicioMes).length;
 
-  // Agrupar
+  // Recorde (maior número em um dia)
+  const porDia = {};
+  procedimentos.forEach(p => {
+    porDia[p.data] = (porDia[p.data] || 0) + 1;
+  });
+  const recorde = Math.max(0, ...Object.values(porDia));
+
+  // Agrupar por tipo
   const grupos = {};
   procedimentos.forEach(p => {
     const tipo = p.categoria || p.tipo || "Outros";
@@ -52,19 +65,21 @@ function calcularEstatisticas(procedimentos) {
       name,
       total: d.total,
       successes: d.successes,
-      rate: d.total > 0 ? (d.successes / d.total) * 100 : 0
+      rate: d.total > 0 ? (d.successes / d.total) * 100 : 0,
+      streak: calcularStreak(procedimentos, name)
     }))
   }));
 
-  return { total, successes, successRate, streak, byGroup };
+  return { total, successes, successRate, esteMes, recorde, byGroup };
 }
 
 export function Dashboard() {
-  const [stats, setStats] = useState({ total: 0, successes: 0, successRate: 0, streak: 0, byGroup: [] });
+  const [stats, setStats] = useState({ total: 0, successes: 0, successRate: 0, esteMes: 0, recorde: 0, byGroup: [] });
   const [procedimentos, setProcedimentos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [excluindo, setExcluindo] = useState(null);
   const [expandedGroups, setExpandedGroups] = useState({});
+  const [filtroTag, setFiltroTag] = useState(null);
   
   // Metas
   const [metas, setMetas] = useState([]);
@@ -86,12 +101,10 @@ export function Dashboard() {
       setProcedimentos(dados);
       setStats(calcularEstatisticas(dados));
 
-      // Carregar configurações (tipos/subdivisões)
       const config = await buscarConfiguracoes(userId);
       setTiposDisponiveis(config.tipos || []);
       setSubdivisoesDisponiveis(config.subdivisoes || {});
 
-      // Carregar metas do localStorage (depois migrar para Firestore)
       const metasSalvas = JSON.parse(localStorage.getItem(`metas_${userId}`) || "[]");
       setMetas(metasSalvas);
     } catch (error) {
@@ -132,7 +145,6 @@ export function Dashboard() {
 
   const handleSalvarMeta = () => {
     if (!novaMeta.tipo || !novaMeta.quantidade) return;
-    
     const userId = auth.currentUser?.uid;
     const novasMetas = [...metas, { ...novaMeta, id: Date.now() }];
     setMetas(novasMetas);
@@ -148,7 +160,15 @@ export function Dashboard() {
     localStorage.setItem(`metas_${userId}`, JSON.stringify(novasMetas));
   };
 
+  const handleTagClick = (tag) => {
+    setFiltroTag(filtroTag === tag ? null : tag);
+  };
+
   const formatDate = (d) => d ? new Date(d).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }) : "";
+
+  const procedimentosFiltrados = filtroTag 
+    ? procedimentos.filter(p => p.tags?.includes(filtroTag))
+    : procedimentos;
 
   const cores = ["#10b981", "#8b5cf6", "#06b6d4", "#f59e0b", "#ec4899"];
 
@@ -167,13 +187,8 @@ export function Dashboard() {
         <div className="avatar">🩺</div>
       </div>
 
-      {/* Stats FIXOS */}
+      {/* Stats - 4 itens FIXOS */}
       <div className="stats-row">
-        <div className="stat-card">
-          <div className="stat-icon">🔥</div>
-          <p className="stat-value">{stats.streak}</p>
-          <p className="stat-label">Streak</p>
-        </div>
         <div className="stat-card">
           <div className="stat-icon">📋</div>
           <p className="stat-value">{stats.total}</p>
@@ -183,6 +198,16 @@ export function Dashboard() {
           <div className="stat-icon">✅</div>
           <p className="stat-value green">{stats.successRate.toFixed(0)}%</p>
           <p className="stat-label">Sucesso</p>
+        </div>
+        <div className="stat-card">
+          <div className="stat-icon">📅</div>
+          <p className="stat-value blue">{stats.esteMes}</p>
+          <p className="stat-label">Este Mês</p>
+        </div>
+        <div className="stat-card">
+          <div className="stat-icon">🏆</div>
+          <p className="stat-value yellow">{stats.recorde}</p>
+          <p className="stat-label">Recorde</p>
         </div>
       </div>
 
@@ -205,9 +230,7 @@ export function Dashboard() {
             </div>
 
             {metas.length === 0 ? (
-              <p style={{ color: '#6b6b7e', fontSize: '14px', textAlign: 'center', padding: '20px' }}>
-                Nenhuma meta criada. Clique em "+ Nova" para começar!
-              </p>
+              <p className="empty-metas">Nenhuma meta criada. Clique em "+ Nova"!</p>
             ) : (
               <div className="metas-list">
                 {metas.map(meta => {
@@ -242,7 +265,7 @@ export function Dashboard() {
             <div className="section-header">
               <div>
                 <h2 className="section-title">📈 Curva de Aprendizado</h2>
-                <p className="section-desc">Taxa de sucesso por procedimento</p>
+                <p className="section-desc">Taxa de sucesso + streak por procedimento</p>
               </div>
             </div>
 
@@ -272,7 +295,10 @@ export function Dashboard() {
                       <div key={i} className="sub-item">
                         <div className="sub-info">
                           <h4>{item.name}</h4>
-                          <span className="sub-meta">{item.total} proc · {item.successes} suc.</span>
+                          <span className="sub-meta">
+                            {item.total} proc · {item.successes} suc.
+                            {item.streak > 0 && <span className="sub-streak">🔥 {item.streak}</span>}
+                          </span>
                         </div>
                         <div className="sub-stats">
                           <div className="mini-progress">
@@ -284,7 +310,7 @@ export function Dashboard() {
                               }} 
                             />
                           </div>
-                          <span className={`sub-rate`} style={{ color: item.rate >= 80 ? '#10b981' : item.rate >= 60 ? '#f59e0b' : '#ef4444' }}>
+                          <span className="sub-rate" style={{ color: item.rate >= 80 ? '#10b981' : item.rate >= 60 ? '#f59e0b' : '#ef4444' }}>
                             {item.rate.toFixed(0)}%
                           </span>
                         </div>
@@ -325,8 +351,16 @@ export function Dashboard() {
             <div className="section-header">
               <h2 className="section-title">📝 Últimos Registros</h2>
             </div>
+
+            {filtroTag && (
+              <div className="filter-active">
+                <span className="filter-text">Filtrando por: "{filtroTag}"</span>
+                <button className="filter-clear" onClick={() => setFiltroTag(null)}>×</button>
+              </div>
+            )}
+
             <div className="history-list">
-              {procedimentos.slice(0, 6).map(proc => (
+              {procedimentosFiltrados.slice(0, 8).map((proc, idx) => (
                 <div key={proc.id} className="history-item">
                   <div className="history-left">
                     <span className={`history-status ${proc.sucesso ? 'success' : 'fail'}`}>
@@ -335,6 +369,19 @@ export function Dashboard() {
                     <div className="history-info">
                       <span className="history-proc">{proc.procedimento || proc.subdivisao}</span>
                       <span className="history-meta">{proc.categoria || proc.tipo} · {proc.tentativas || 1} tent.</span>
+                      {proc.tags?.length > 0 && (
+                        <div className="history-tags">
+                          {proc.tags.map((tag, i) => (
+                            <span 
+                              key={i} 
+                              className={`history-tag tag-${i % 6}`}
+                              onClick={() => handleTagClick(tag)}
+                            >
+                              {tag}
+                            </span>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   </div>
                   <div className="history-right">

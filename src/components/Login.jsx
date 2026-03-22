@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { signInWithPopup } from "firebase/auth";
+import React, { useState, useEffect } from "react";
+import { signInWithPopup, signInWithRedirect, getRedirectResult } from "firebase/auth";
 import { auth, googleProvider } from "../firebase";
 import "./Login.css";
 
@@ -7,16 +7,44 @@ export function Login() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
+  useEffect(() => {
+    // Verifica se voltou de um redirect
+    getRedirectResult(auth)
+      .then((result) => {
+        if (result) {
+          console.log("Login OK:", result.user.email);
+        }
+      })
+      .catch((err) => {
+        console.error("Erro redirect:", err);
+        if (err.code !== 'auth/popup-closed-by-user') {
+          setError("Erro: " + err.message);
+        }
+      });
+  }, []);
+
   const handleGoogleLogin = async () => {
     setLoading(true);
     setError(null);
     
     try {
+      // Tenta popup primeiro
       await signInWithPopup(auth, googleProvider);
     } catch (err) {
-      console.error("Erro no login:", err);
-      setError("Erro ao fazer login. Tente novamente.");
-    } finally {
+      console.error("Erro popup:", err.code, err.message);
+      
+      // Se popup falhar, tenta redirect
+      if (err.code === 'auth/popup-blocked' || 
+          err.code === 'auth/popup-closed-by-user' ||
+          err.code === 'auth/cancelled-popup-request') {
+        try {
+          await signInWithRedirect(auth, googleProvider);
+        } catch (redirectErr) {
+          setError("Erro ao fazer login: " + redirectErr.message);
+        }
+      } else {
+        setError("Erro ao fazer login: " + err.message);
+      }
       setLoading(false);
     }
   };
@@ -26,7 +54,7 @@ export function Login() {
       <div className="login-card">
         <div className="login-header">
           <span className="login-icon">🩺</span>
-          <h1 className="login-title">AnestestLOG</h1>
+          <h1 className="login-title">AnestesioLOG</h1>
           <p className="login-subtitle">Registro de procedimentos anestésicos</p>
         </div>
 

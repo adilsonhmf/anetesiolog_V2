@@ -1,0 +1,138 @@
+.agenda-container {
+    max-width: 480px;
+    margin: 0 auto;
+    padding: 20px;
+    padding-bottom: 120px;
+    min-height: 100vh;
+    color: #ffffff;
+  }
+  
+  .agenda-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+  }
+  
+  .agenda-title {
+    font-size: 28px;
+    font-weight: 700;
+    background: linear-gradient(135deg, #10b981 0%, #06b6d4 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin: 0 0 4px 0;
+  }
+  
+  .agenda-subtitle {
+    font-size: 14px;
+    color: #8b8b9e;
+    margin: 0;
+  }
+  
+  .agenda-edit-btn {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    border: 1px solid #2a2a3e;
+    background: transparent;
+    font-size: 20px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  
+  .agenda-edit-btn:hover {
+    border-color: #10b981;
+    background: rgba(16, 185, 129, 0.1);
+  }
+  
+  /* Config Card */
+  .agenda-config-card {
+    background: linear-gradient(135deg, rgba(22, 22, 42, 0.9) 0%, rgba(30, 30, 58, 0.9) 100%);
+    border: 1px solid #2a2a3e;
+    border-radius: 20px;
+    padding: 24px;
+  }
+  
+  .agenda-config-card h3 {
+    font-size: 16px;
+    color: #ffffff;
+    margin: 0 0 16px 0;
+  }
+  
+  .agenda-steps {
+    padding-left: 20px;
+    margin: 0 0 20px 0;
+  }
+  
+  .agenda-steps li {
+    font-size: 14px;
+    color: #8b8b9e;
+    margin-bottom: 10px;
+    line-height: 1.5;
+  }
+  
+  .agenda-steps strong {
+    color: #ffffff;
+  }
+  
+  .agenda-url-input {
+    width: 100%;
+    padding: 14px 16px;
+    border-radius: 12px;
+    border: 1px solid #2a2a3e;
+    background: rgba(0, 0, 0, 0.2);
+    color: #ffffff;
+    font-size: 14px;
+    margin-bottom: 16px;
+    box-sizing: border-box;
+  }
+  
+  .agenda-url-input:focus {
+    outline: none;
+    border-color: #10b981;
+  }
+  
+  .agenda-salvar-btn {
+    width: 100%;
+    padding: 16px;
+    border-radius: 14px;
+    border: none;
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: #ffffff;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-bottom: 16px;
+  }
+  
+  .agenda-salvar-btn:hover {
+    transform: translateY(-2px);
+  }
+  
+  .agenda-tip {
+    font-size: 13px;
+    color: #6b6b7e;
+    text-align: center;
+    margin: 0;
+    padding: 12px;
+    background: rgba(245, 158, 11, 0.1);
+    border-radius: 10px;
+  }
+  
+  /* Calendar Wrapper */
+  .agenda-calendar-wrapper {
+    background: #ffffff;
+    border-radius: 16px;
+    overflow: hidden;
+    height: calc(100vh - 200px);
+    min-height: 500px;
+  }
+  
+  .agenda-iframe {
+    width: 100%;
+    height: 100%;
+    border: none;
+  }
+  

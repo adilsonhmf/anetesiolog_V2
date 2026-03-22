@@ -5,10 +5,10 @@
   right: 0;
   display: flex;
   justify-content: space-around;
-  align-items: center;
-  padding: 12px 20px 24px 20px;
-  background: linear-gradient(135deg, rgba(22, 22, 42, 0.95) 0%, rgba(30, 30, 58, 0.95) 100%);
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  align-items: flex-end;
+  padding: 8px 12px 20px 12px;
+  background: linear-gradient(180deg, rgba(22, 22, 42, 0.95) 0%, rgba(16, 16, 32, 0.98) 100%);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   z-index: 1000;
@@ -18,43 +18,69 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 6px;
-  padding: 10px 20px;
+  gap: 4px;
+  padding: 8px 12px;
   border: none;
   background: transparent;
   color: #6b6b7e;
   font-size: 12px;
-  font-weight: 500;
   cursor: pointer;
-  transition: all 0.3s ease;
-  border-radius: 16px;
+  transition: all 0.2s ease;
+  border-radius: 12px;
+  min-width: 56px;
 }
 
 .nav-btn:hover {
-  color: #a0a0b0;
-  background: rgba(255, 255, 255, 0.05);
+  color: #8b8b9e;
 }
 
 .nav-btn.active {
   color: #10b981;
-  background: rgba(16, 185, 129, 0.1);
-}
-
-.nav-icon {
-  width: 24px;
-  height: 24px;
-  transition: transform 0.3s ease;
-}
-
-.nav-btn:hover .nav-icon {
-  transform: scale(1.1);
 }
 
 .nav-btn.active .nav-icon {
-  transform: scale(1.15);
+  transform: scale(1.1);
 }
 
-.nav-btn span {
-  font-size: 11px;
+/* Botão central (Registrar) */
+.nav-btn.main {
+  position: relative;
+  margin-top: -20px;
+}
+
+.nav-btn.main .main-icon {
+  width: 52px;
+  height: 52px;
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  box-shadow: 0 4px 20px rgba(16, 185, 129, 0.4);
+  transition: all 0.2s ease;
+}
+
+.nav-btn.main:hover .main-icon {
+  transform: scale(1.1);
+  box-shadow: 0 6px 25px rgba(16, 185, 129, 0.5);
+}
+
+.nav-btn.main.active .main-icon {
+  box-shadow: 0 6px 30px rgba(16, 185, 129, 0.6);
+}
+
+.nav-btn.main .nav-label {
+  margin-top: 4px;
+}
+
+.nav-icon {
+  font-size: 22px;
+  transition: transform 0.2s ease;
+}
+
+.nav-label {
+  font-size: 10px;
+  font-weight: 500;
   letter-spacing: 0.3px;
 }

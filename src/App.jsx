@@ -4,6 +4,9 @@ import { auth } from './firebase';
 import { Login } from './components/Login';
 import { Dashboard } from './components/Dashboard';
 import { RegistrarProcedimento } from './components/RegistrarProcedimento';
+import { Tarefas } from './components/Tarefas';
+import { Notas } from './components/Notas';
+import { Agenda } from './components/Agenda';
 import { NavBar } from './components/NavBar';
 import './App.css';
 
@@ -21,7 +24,6 @@ function App() {
     return () => unsubscribe();
   }, []);
 
-  // Tela de carregamento
   if (loading) {
     return (
       <div className="app">
@@ -33,7 +35,6 @@ function App() {
     );
   }
 
-  // Se NÃO está logado, mostra tela de Login
   if (!user) {
     return (
       <div className="app">
@@ -42,26 +43,13 @@ function App() {
     );
   }
 
-  // Se está logado, mostra o app normal
   return (
     <div className="app">
       {currentPage === 'dashboard' && <Dashboard />}
       {currentPage === 'registrar' && <RegistrarProcedimento />}
-      {currentPage === 'metas' && (
-        <div className="metas-container">
-          <h2>🎯 Metas</h2>
-          <p>Em breve!</p>
-          <p style={{ color: '#8b8b9e', fontSize: '14px', marginTop: '20px' }}>
-            Logado como: {user.email}
-          </p>
-          <button 
-            className="logout-btn" 
-            onClick={() => signOut(auth)}
-          >
-            Sair da conta
-          </button>
-        </div>
-      )}
+      {currentPage === 'tarefas' && <Tarefas />}
+      {currentPage === 'notas' && <Notas />}
+      {currentPage === 'agenda' && <Agenda />}
       
       <NavBar currentPage={currentPage} setCurrentPage={setCurrentPage} />
     </div>

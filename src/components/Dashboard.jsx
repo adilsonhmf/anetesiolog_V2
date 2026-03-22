@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { buscarProcedimentos } from "../firestoreService";
+import { buscarProcedimentos, excluirProcedimento } from "../firestoreService";
 import { auth } from "../firebase";
 import "./Dashboard.css";
 
@@ -15,16 +15,11 @@ function calcularEstatisticasFromData(procedimentos) {
   const successes = procedimentos.filter(p => p.sucesso).length;
   const successRate = total > 0 ? (successes / total) * 100 : 0;
 
-  const grupos = {
-    "Via Aérea": {},
-    "Neuroeixo": {},
-    "Bloqueios Regionais": {},
-    "Acessos Vasculares": {}
-  };
+  const grupos = {};
 
   procedimentos.forEach(p => {
-    const cat = p.categoria || "Outros";
-    const proc = p.procedimento || "Desconhecido";
+    const cat = p.categoria || p.tipo || "Outros";
+    const proc = p.procedimento || p.subdivisao || "Desconhecido";
     
     if (!grupos[cat]) grupos[cat] = {};
     if (!grupos[cat][proc]) {
@@ -62,7 +57,7 @@ function BarChart({ data }) {
   
   return (
     <div className="chart-container">
-      <h3 className="chart-title">Procedimentos por Categoria</h3>
+      <h3 className="chart-title">Procedimentos por Tipo</h3>
       <div className="bar-chart">
         {data.map((item, idx) => (
           <div key={idx} className="bar-row">
@@ -79,76 +74,6 @@ function BarChart({ data }) {
             <span className="bar-value">{item.total}</span>
           </div>
         ))}
-      </div>
-    </div>
-  );
-}
-
-function LineChart({ data }) {
-  if (data.length < 2) {
-    return (
-      <div className="chart-container">
-        <h3 className="chart-title">Evolução Semanal</h3>
-        <p className="chart-empty">Registre mais procedimentos para ver a evolução</p>
-      </div>
-    );
-  }
-
-  const maxValue = Math.max(...data.map(d => d.total), 1);
-  const points = data.map((d, i) => {
-    const x = (i / (data.length - 1)) * 100;
-    const y = 100 - (d.total / maxValue) * 80;
-    return `${x},${y}`;
-  }).join(' ');
-
-  const successPoints = data.map((d, i) => {
-    const x = (i / (data.length - 1)) * 100;
-    const y = 100 - (d.successRate) * 0.8;
-    return `${x},${y}`;
-  }).join(' ');
-
-  return (
-    <div className="chart-container">
-      <h3 className="chart-title">Evolução Semanal</h3>
-      <div className="line-chart">
-        <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="chart-svg">
-          <line x1="0" y1="25" x2="100" y2="25" stroke="#2a2a3e" strokeWidth="0.5"/>
-          <line x1="0" y1="50" x2="100" y2="50" stroke="#2a2a3e" strokeWidth="0.5"/>
-          <line x1="0" y1="75" x2="100" y2="75" stroke="#2a2a3e" strokeWidth="0.5"/>
-          
-          <polyline
-            points={successPoints}
-            fill="none"
-            stroke="#06b6d4"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-          
-          <polyline
-            points={points}
-            fill="none"
-            stroke="#10b981"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        </svg>
-        <div className="chart-legend">
-          <div className="legend-item">
-            <span className="legend-dot" style={{background: '#10b981'}}></span>
-            <span>Procedimentos</span>
-          </div>
-          <div className="legend-item">
-            <span className="legend-dot" style={{background: '#06b6d4'}}></span>
-            <span>Taxa Sucesso</span>
-          </div>
-        </div>
-        <div className="chart-labels">
-          {data.map((d, i) => (
-            <span key={i} className="chart-label-x">{d.label}</span>
-          ))}
-        </div>
       </div>
     </div>
   );
@@ -256,8 +181,8 @@ function ProcedureGroup({ group }) {
 export function Dashboard() {
   const [summary, setSummary] = useState({ total: 0, successes: 0, successRate: 0, byProcedureGroup: [] });
   const [procedimentos, setProcedimentos] = useState([]);
-  const [weeklyData, setWeeklyData] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [excluindo, setExcluindo] = useState(null);
 
   useEffect(() => {
     carregarDados();
@@ -274,31 +199,6 @@ export function Dashboard() {
       const dados = await buscarProcedimentos(userId);
       setProcedimentos(dados);
       setSummary(calcularEstatisticasFromData(dados));
-      
-      // Calcular dados semanais
-      const hoje = new Date();
-      const semanas = [];
-      for (let i = 3; i >= 0; i--) {
-        const inicioSemana = new Date(hoje);
-        inicioSemana.setDate(hoje.getDate() - (i * 7) - hoje.getDay());
-        const fimSemana = new Date(inicioSemana);
-        fimSemana.setDate(inicioSemana.getDate() + 6);
-        
-        const procSemana = dados.filter(p => {
-          const dataProc = new Date(p.data);
-          return dataProc >= inicioSemana && dataProc <= fimSemana;
-        });
-        
-        const total = procSemana.length;
-        const sucessos = procSemana.filter(p => p.sucesso).length;
-        
-        semanas.push({
-          label: `S${4-i}`,
-          total,
-          successRate: total > 0 ? (sucessos / total) * 100 : 0
-        });
-      }
-      setWeeklyData(semanas);
     } catch (error) {
       console.error("Erro ao carregar:", error);
     } finally {
@@ -306,24 +206,53 @@ export function Dashboard() {
     }
   };
 
+  const handleExcluir = async (proc) => {
+    const confirmar = window.confirm(`Excluir "${proc.procedimento || proc.subdivisao}"?`);
+    if (!confirmar) return;
+
+    setExcluindo(proc.id);
+    try {
+      await excluirProcedimento(proc.id);
+      // Atualiza a lista localmente
+      const novaLista = procedimentos.filter(p => p.id !== proc.id);
+      setProcedimentos(novaLista);
+      setSummary(calcularEstatisticasFromData(novaLista));
+    } catch (error) {
+      console.error("Erro ao excluir:", error);
+      alert("Erro ao excluir. Tente novamente.");
+    } finally {
+      setExcluindo(null);
+    }
+  };
+
   const formatDate = (dateString) => {
+    if (!dateString) return "";
     const date = new Date(dateString);
     return date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
   };
 
-  const barData = [
-    { label: "Via Aérea", total: 0, color: "#10b981", colorEnd: "#059669" },
-    { label: "Neuroeixo", total: 0, color: "#8b5cf6", colorEnd: "#7c3aed" },
-    { label: "Bloqueios", total: 0, color: "#06b6d4", colorEnd: "#0891b2" },
-    { label: "Acessos", total: 0, color: "#f59e0b", colorEnd: "#d97706" }
+  // Cores para o gráfico de barras
+  const cores = [
+    { color: "#10b981", colorEnd: "#059669" },
+    { color: "#8b5cf6", colorEnd: "#7c3aed" },
+    { color: "#06b6d4", colorEnd: "#0891b2" },
+    { color: "#f59e0b", colorEnd: "#d97706" },
+    { color: "#ec4899", colorEnd: "#db2777" },
+    { color: "#6366f1", colorEnd: "#4f46e5" },
   ];
 
+  // Agrupa por tipo para o gráfico
+  const tiposContagem = {};
   procedimentos.forEach(p => {
-    if (p.categoria === "Via Aérea") barData[0].total++;
-    else if (p.categoria === "Neuroeixo") barData[1].total++;
-    else if (p.categoria === "Bloqueios Regionais") barData[2].total++;
-    else if (p.categoria === "Acessos Vasculares") barData[3].total++;
+    const tipo = p.categoria || p.tipo || "Outros";
+    tiposContagem[tipo] = (tiposContagem[tipo] || 0) + 1;
   });
+
+  const barData = Object.entries(tiposContagem).map(([label, total], idx) => ({
+    label,
+    total,
+    ...cores[idx % cores.length]
+  }));
 
   if (loading) {
     return (
@@ -375,8 +304,7 @@ export function Dashboard() {
         </div>
       ) : (
         <>
-          <BarChart data={barData.filter(d => d.total > 0)} />
-          <LineChart data={weeklyData} />
+          {barData.length > 0 && <BarChart data={barData} />}
 
           <div className="section">
             <h2 className="section-title">Curva de Aprendizado</h2>
@@ -389,24 +317,32 @@ export function Dashboard() {
 
           <div className="section">
             <h2 className="section-title">Últimos Registros</h2>
+            <p className="section-desc">Deslize para esquerda para excluir</p>
 
             <div className="history-list">
-              {procedimentos.slice(0, 5).map((proc) => (
+              {procedimentos.slice(0, 10).map((proc) => (
                 <div key={proc.id} className="history-item">
                   <div className="history-left">
                     <span className={`history-status ${proc.sucesso ? 'success' : 'fail'}`}>
                       {proc.sucesso ? '✓' : '✗'}
                     </span>
                     <div className="history-info">
-                      <span className="history-proc">{proc.procedimento}</span>
+                      <span className="history-proc">{proc.procedimento || proc.subdivisao}</span>
                       <span className="history-meta">
-                        {proc.categoria} · {proc.tentativas || 1} tent.
+                        {proc.categoria || proc.tipo} · {proc.tentativas || 1} tent.
                         {proc.tags && proc.tags.length > 0 && ` · ${proc.tags.join(', ')}`}
                       </span>
                     </div>
                   </div>
                   <div className="history-right">
                     <span className="history-date">{formatDate(proc.data)}</span>
+                    <button 
+                      className="delete-btn"
+                      onClick={() => handleExcluir(proc)}
+                      disabled={excluindo === proc.id}
+                    >
+                      {excluindo === proc.id ? '...' : '🗑️'}
+                    </button>
                   </div>
                 </div>
               ))}

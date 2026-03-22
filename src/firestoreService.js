@@ -122,4 +122,16 @@ import {
       throw error;
     }
   }
+  // ==================== EXCLUIR PROCEDIMENTO ====================
+
+export async function excluirProcedimento(procedimentoId) {
+    try {
+      const { deleteDoc, doc } = await import("firebase/firestore");
+      await deleteDoc(doc(db, "procedimentos", procedimentoId));
+      return true;
+    } catch (error) {
+      console.error("Erro ao excluir procedimento:", error);
+      throw error;
+    }
+  }
   

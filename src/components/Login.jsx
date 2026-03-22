@@ -26,7 +26,7 @@ export function Login() {
       <div className="login-card">
         <div className="login-header">
           <span className="login-icon">🩺</span>
-          <h1 className="login-title">AnestesioLOG</h1>
+          <h1 className="login-title">AnestestLOG</h1>
           <p className="login-subtitle">Registro de procedimentos anestésicos</p>
         </div>
 

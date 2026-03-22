@@ -1,126 +1,105 @@
-* {
-  box-sizing: border-box;
-  -webkit-tap-highlight-color: transparent;
-}
-
-html, body {
-  margin: 0;
-  padding: 0;
-  background: #0a0a0f;
-}
-
-.app {
+/* Loading Screen */
+.loading-screen {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
   min-height: 100vh;
-  background-image: url('https://wallpapercave.com/wp/wp10712787.jpg');
-  background-size: cover;
-  background-position: center;
-  background-attachment: fixed;
-  position: relative;
-}
-
-.app::before {
-  content: '';
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: linear-gradient(
-    180deg, 
-    rgba(10, 10, 15, 0.92) 0%, 
-    rgba(26, 26, 46, 0.88) 50%,
-    rgba(10, 10, 15, 0.95) 100%
-  );
-  pointer-events: none;
-  z-index: 0;
-}
-
-.app > *:not(nav) {
+  color: #ffffff;
   position: relative;
   z-index: 1;
 }
 
-.coming-soon {
+.loading-icon {
+  font-size: 64px;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.1); opacity: 0.7; }
+}
+
+.loading-screen p {
+  margin-top: 16px;
+  color: #8b8b9e;
+  font-size: 16px;
+}
+
+/* Logout Button */
+.logout-btn {
+  margin-top: 24px;
+  padding: 12px 24px;
+  border-radius: 12px;
+  border: 1px solid #ef4444;
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.logout-btn:hover {
+  background: rgba(239, 68, 68, 0.2);
+}
+/* Loading Screen */
+.loading-screen {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  color: #ffffff;
+  position: relative;
+  z-index: 1;
+}
+
+.loading-icon {
+  font-size: 64px;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.1); opacity: 0.7; }
+}
+
+.loading-screen p {
+  margin-top: 16px;
+  color: #8b8b9e;
+  font-size: 16px;
+}
+
+/* Metas Container */
+.metas-container {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   min-height: 80vh;
-  text-align: center;
-  color: #8b8b9e;
-  padding: 20px;
-  position: relative;
-  z-index: 1;
-}
-
-.coming-soon h2 {
-  font-size: 32px;
-  margin-bottom: 8px;
   color: #ffffff;
+  text-align: center;
+  padding: 20px;
 }
 
-/* NavBar Profissional */
-.navbar {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  display: flex;
-  justify-content: space-around;
-  background: linear-gradient(180deg, rgba(22, 22, 42, 0.95) 0%, rgba(10, 10, 15, 0.98) 100%);
-  border-top: 1px solid rgba(16, 185, 129, 0.2);
-  padding: 8px 0 24px 0;
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  z-index: 100;
+.metas-container h2 {
+  font-size: 32px;
+  margin-bottom: 16px;
 }
 
-.nav-btn {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-  background: none;
-  border: none;
-  cursor: pointer;
-  padding: 8px 20px;
+/* Logout Button */
+.logout-btn {
+  margin-top: 24px;
+  padding: 12px 24px;
   border-radius: 12px;
-  transition: all 0.3s ease;
+  border: 1px solid #ef4444;
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
 }
 
-.nav-btn span {
-  font-size: 11px;
-  font-weight: 500;
-  color: #6b6b7e;
-  transition: color 0.3s ease;
-}
-
-.nav-icon {
-  width: 24px;
-  height: 24px;
-  color: #6b6b7e;
-  transition: all 0.3s ease;
-}
-
-.nav-btn:hover {
-  background: rgba(16, 185, 129, 0.1);
-}
-
-.nav-btn:hover .nav-icon,
-.nav-btn:hover span {
-  color: #10b981;
-}
-
-.nav-btn.active {
-  background: linear-gradient(135deg, rgba(16, 185, 129, 0.2) 0%, rgba(6, 182, 212, 0.15) 100%);
-}
-
-.nav-btn.active .nav-icon {
-  color: #10b981;
-  filter: drop-shadow(0 0 8px rgba(16, 185, 129, 0.6));
-}
-
-.nav-btn.active span {
-  color: #10b981;
-  font-weight: 600;
+.logout-btn:hover {
+  background: rgba(239, 68, 68, 0.2);
 }

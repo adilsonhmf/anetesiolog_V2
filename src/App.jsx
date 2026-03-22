@@ -1,60 +1,69 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { onAuthStateChanged, signOut } from 'firebase/auth';
+import { auth } from './firebase';
+import { Login } from './components/Login';
 import { Dashboard } from './components/Dashboard';
 import { RegistrarProcedimento } from './components/RegistrarProcedimento';
+import { NavBar } from './components/NavBar';
 import './App.css';
 
 function App() {
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState('dashboard');
 
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
+      setLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  // Tela de carregamento
+  if (loading) {
+    return (
+      <div className="app">
+        <div className="loading-screen">
+          <span className="loading-icon">🩺</span>
+          <p>Carregando...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Se NÃO está logado, mostra tela de Login
+  if (!user) {
+    return (
+      <div className="app">
+        <Login />
+      </div>
+    );
+  }
+
+  // Se está logado, mostra o app normal
   return (
     <div className="app">
       {currentPage === 'dashboard' && <Dashboard />}
       {currentPage === 'registrar' && <RegistrarProcedimento />}
       {currentPage === 'metas' && (
-        <div className="coming-soon">
+        <div className="metas-container">
           <h2>🎯 Metas</h2>
           <p>Em breve!</p>
+          <p style={{ color: '#8b8b9e', fontSize: '14px', marginTop: '20px' }}>
+            Logado como: {user.email}
+          </p>
+          <button 
+            className="logout-btn" 
+            onClick={() => signOut(auth)}
+          >
+            Sair da conta
+          </button>
         </div>
       )}
       
-      <nav className="navbar">
-        <button 
-          className={`nav-btn ${currentPage === 'dashboard' ? 'active' : ''}`}
-          onClick={() => setCurrentPage('dashboard')}
-        >
-          <svg className="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <rect x="3" y="3" width="7" height="7" rx="1"/>
-            <rect x="14" y="3" width="7" height="7" rx="1"/>
-            <rect x="3" y="14" width="7" height="7" rx="1"/>
-            <rect x="14" y="14" width="7" height="7" rx="1"/>
-          </svg>
-          <span>Dashboard</span>
-        </button>
-        
-        <button 
-          className={`nav-btn ${currentPage === 'registrar' ? 'active' : ''}`}
-          onClick={() => setCurrentPage('registrar')}
-        >
-          <svg className="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <circle cx="12" cy="12" r="10"/>
-            <line x1="12" y1="8" x2="12" y2="16"/>
-            <line x1="8" y1="12" x2="16" y2="12"/>
-          </svg>
-          <span>Registrar</span>
-        </button>
-        
-        <button 
-          className={`nav-btn ${currentPage === 'metas' ? 'active' : ''}`}
-          onClick={() => setCurrentPage('metas')}
-        >
-          <svg className="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <circle cx="12" cy="12" r="10"/>
-            <circle cx="12" cy="12" r="6"/>
-            <circle cx="12" cy="12" r="2"/>
-          </svg>
-          <span>Metas</span>
-        </button>
-      </nav>
+      <NavBar currentPage={currentPage} setCurrentPage={setCurrentPage} />
     </div>
   );
 }

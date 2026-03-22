@@ -4,10 +4,9 @@
   padding: 20px;
   padding-bottom: 100px;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: linear-gradient(180deg, #0a0a0f 0%, #1a1a2e 100%);
   min-height: 100vh;
   color: #ffffff;
-  position: relative;
-  z-index: 1;
 }
 
 .header {
@@ -42,7 +41,6 @@
   align-items: center;
   justify-content: center;
   font-size: 24px;
-  box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4);
 }
 
 /* Stats Row com Donut */
@@ -54,15 +52,13 @@
 
 .stat-card-large {
   flex: 1;
-  background: linear-gradient(135deg, rgba(22, 22, 42, 0.8) 0%, rgba(30, 30, 58, 0.8) 100%);
-  border: 1px solid rgba(42, 42, 62, 0.8);
+  background: linear-gradient(135deg, #16162a 0%, #1e1e3a 100%);
+  border: 1px solid #2a2a3e;
   border-radius: 16px;
   padding: 16px;
   display: flex;
   align-items: center;
   justify-content: center;
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
 }
 
 .stats-col {
@@ -73,13 +69,11 @@
 }
 
 .stat-card {
-  background: linear-gradient(135deg, rgba(22, 22, 42, 0.8) 0%, rgba(30, 30, 58, 0.8) 100%);
-  border: 1px solid rgba(42, 42, 62, 0.8);
+  background: linear-gradient(135deg, #16162a 0%, #1e1e3a 100%);
+  border: 1px solid #2a2a3e;
   border-radius: 16px;
   padding: 14px;
   text-align: center;
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
 }
 
 .stat-icon {
@@ -137,13 +131,11 @@
 
 /* Charts */
 .chart-container {
-  background: linear-gradient(135deg, rgba(22, 22, 42, 0.8) 0%, rgba(30, 30, 58, 0.8) 100%);
-  border: 1px solid rgba(42, 42, 62, 0.8);
+  background: linear-gradient(135deg, #16162a 0%, #1e1e3a 100%);
+  border: 1px solid #2a2a3e;
   border-radius: 16px;
   padding: 16px;
   margin-bottom: 16px;
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
 }
 
 .chart-title {
@@ -183,7 +175,7 @@
 .bar-track {
   flex: 1;
   height: 24px;
-  background: rgba(26, 26, 46, 0.8);
+  background: #1a1a2e;
   border-radius: 12px;
   overflow: hidden;
 }
@@ -245,15 +237,13 @@
   color: #6b6b7e;
 }
 
-/* Empty State */
+/* Rest of styles */
 .empty-state {
   text-align: center;
   padding: 60px 20px;
-  background: linear-gradient(135deg, rgba(22, 22, 42, 0.8) 0%, rgba(30, 30, 58, 0.8) 100%);
-  border: 1px solid rgba(42, 42, 62, 0.8);
+  background: linear-gradient(135deg, #16162a 0%, #1e1e3a 100%);
+  border: 1px solid #2a2a3e;
   border-radius: 16px;
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
 }
 
 .empty-icon {
@@ -274,7 +264,6 @@
   font-size: 14px;
 }
 
-/* Sections */
 .section {
   margin-bottom: 20px;
 }
@@ -292,15 +281,12 @@
   margin: 0 0 12px 0;
 }
 
-/* Group Cards */
 .group-card {
-  background: linear-gradient(135deg, rgba(22, 22, 42, 0.8) 0%, rgba(30, 30, 58, 0.8) 100%);
-  border: 1px solid rgba(42, 42, 62, 0.8);
+  background: linear-gradient(135deg, #16162a 0%, #1e1e3a 100%);
+  border: 1px solid #2a2a3e;
   border-radius: 14px;
   margin-bottom: 10px;
   overflow: hidden;
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
 }
 
 .group-header {
@@ -322,7 +308,6 @@
   height: 8px;
   border-radius: 50%;
   background: linear-gradient(135deg, #10b981 0%, #06b6d4 100%);
-  box-shadow: 0 0 8px rgba(16, 185, 129, 0.5);
 }
 
 .group-info {
@@ -359,7 +344,7 @@
 }
 
 .group-body {
-  border-top: 1px solid rgba(42, 42, 62, 0.8);
+  border-top: 1px solid #2a2a3e;
   padding: 8px 14px;
 }
 
@@ -368,7 +353,7 @@
   justify-content: space-between;
   align-items: center;
   padding: 10px 0;
-  border-bottom: 1px solid rgba(37, 37, 56, 0.8);
+  border-bottom: 1px solid #252538;
 }
 
 .procedure-row:last-child {
@@ -396,7 +381,6 @@
   font-weight: 700;
 }
 
-/* History List */
 .history-list {
   display: flex;
   flex-direction: column;
@@ -407,19 +391,17 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: linear-gradient(135deg, rgba(22, 22, 42, 0.8) 0%, rgba(30, 30, 58, 0.8) 100%);
-  border: 1px solid rgba(42, 42, 62, 0.8);
+  background: linear-gradient(135deg, #16162a 0%, #1e1e3a 100%);
+  border: 1px solid #2a2a3e;
   border-radius: 12px;
   padding: 12px 14px;
   cursor: pointer;
   transition: all 0.2s;
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
 }
 
 .history-item:hover {
   border-color: #ef4444;
-  background: rgba(239, 68, 68, 0.1);
+  background: rgba(239, 68, 68, 0.05);
 }
 
 .history-left {
@@ -443,15 +425,13 @@
 }
 
 .history-status.success {
-  background: rgba(16, 185, 129, 0.25);
+  background: rgba(16, 185, 129, 0.2);
   color: #10b981;
-  box-shadow: 0 0 10px rgba(16, 185, 129, 0.3);
 }
 
 .history-status.fail {
-  background: rgba(239, 68, 68, 0.25);
+  background: rgba(239, 68, 68, 0.2);
   color: #ef4444;
-  box-shadow: 0 0 10px rgba(239, 68, 68, 0.3);
 }
 
 .history-info {

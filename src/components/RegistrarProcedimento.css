@@ -4,10 +4,9 @@
   padding: 20px;
   padding-bottom: 100px;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: linear-gradient(180deg, #0a0a0f 0%, #1a1a2e 100%);
   min-height: 100vh;
   color: #ffffff;
-  position: relative;
-  z-index: 1;
 }
 
 .registrar-header {
@@ -18,11 +17,8 @@
 .registrar-title {
   font-size: 28px;
   font-weight: 700;
+  color: #ffffff;
   margin: 0 0 4px 0;
-  background: linear-gradient(135deg, #10b981 0%, #06b6d4 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
 }
 
 .registrar-subtitle {
@@ -37,8 +33,6 @@
   margin-bottom: 16px;
   font-weight: 500;
   text-align: center;
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
 }
 
 .mensagem.sucesso {
@@ -78,13 +72,11 @@
 .form-textarea {
   padding: 16px;
   border-radius: 12px;
-  border: 1px solid rgba(42, 42, 62, 0.8);
-  background: linear-gradient(135deg, rgba(22, 22, 42, 0.8) 0%, rgba(30, 30, 58, 0.8) 100%);
+  border: 1px solid #2a2a3e;
+  background-color: #16162a;
   font-size: 16px;
   color: #ffffff;
   transition: all 0.2s;
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
 }
 
 .form-select:focus,
@@ -92,11 +84,11 @@
 .form-textarea:focus {
   outline: none;
   border-color: #10b981;
-  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15), 0 0 20px rgba(16, 185, 129, 0.1);
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
 }
 
 .form-select:disabled {
-  background: rgba(15, 15, 26, 0.8);
+  background-color: #0f0f1a;
   color: #4a4a5e;
 }
 
@@ -119,15 +111,13 @@
   flex: 1;
   padding: 16px;
   border-radius: 12px;
-  border: 2px solid rgba(42, 42, 62, 0.8);
-  background: linear-gradient(135deg, rgba(22, 22, 42, 0.8) 0%, rgba(30, 30, 58, 0.8) 100%);
+  border: 2px solid #2a2a3e;
+  background-color: #16162a;
   font-size: 15px;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s;
   color: #8b8b9e;
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
 }
 
 .radio-btn.sucesso:hover {
@@ -142,29 +132,25 @@
 
 .radio-btn.sucesso.selected {
   border-color: #10b981;
-  background: linear-gradient(135deg, rgba(16, 185, 129, 0.25) 0%, rgba(16, 185, 129, 0.15) 100%);
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.2) 0%, rgba(16, 185, 129, 0.1) 100%);
   color: #10b981;
-  box-shadow: 0 0 20px rgba(16, 185, 129, 0.2);
 }
 
 .radio-btn.falha.selected {
   border-color: #ef4444;
-  background: linear-gradient(135deg, rgba(239, 68, 68, 0.25) 0%, rgba(239, 68, 68, 0.15) 100%);
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.2) 0%, rgba(239, 68, 68, 0.1) 100%);
   color: #ef4444;
-  box-shadow: 0 0 20px rgba(239, 68, 68, 0.2);
 }
 
 .tentativas-control {
   display: flex;
   align-items: center;
   gap: 16px;
-  background: linear-gradient(135deg, rgba(22, 22, 42, 0.8) 0%, rgba(30, 30, 58, 0.8) 100%);
+  background-color: #16162a;
   padding: 8px 16px;
   border-radius: 12px;
-  border: 1px solid rgba(42, 42, 62, 0.8);
+  border: 1px solid #2a2a3e;
   width: fit-content;
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
 }
 
 .tentativas-btn {
@@ -178,12 +164,10 @@
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s;
-  box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
 }
 
 .tentativas-btn:hover {
   transform: scale(1.05);
-  box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
 }
 
 .tentativas-btn:active {
@@ -209,16 +193,16 @@
   cursor: pointer;
   transition: all 0.2s;
   margin-top: 8px;
-  box-shadow: 0 4px 20px rgba(16, 185, 129, 0.4);
+  box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
 }
 
 .submit-btn:hover {
   transform: translateY(-2px);
-  box-shadow: 0 6px 25px rgba(16, 185, 129, 0.5);
+  box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
 }
 
 .submit-btn:disabled {
-  background: rgba(42, 42, 62, 0.8);
+  background: #2a2a3e;
   cursor: not-allowed;
   transform: none;
   box-shadow: none;
@@ -240,15 +224,13 @@
   top: 100%;
   left: 0;
   right: 0;
-  background: rgba(30, 30, 58, 0.95);
-  border: 1px solid rgba(42, 42, 62, 0.8);
+  background: #1e1e3a;
+  border: 1px solid #2a2a3e;
   border-top: none;
   border-radius: 0 0 12px 12px;
   max-height: 200px;
   overflow-y: auto;
   z-index: 100;
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
 }
 
 .sugestao-item {
@@ -256,7 +238,7 @@
   cursor: pointer;
   color: #ffffff;
   font-size: 14px;
-  border-bottom: 1px solid rgba(42, 42, 62, 0.8);
+  border-bottom: 1px solid #2a2a3e;
   transition: background 0.2s;
 }
 
@@ -265,7 +247,7 @@
 }
 
 .sugestao-item:hover {
-  background: rgba(16, 185, 129, 0.2);
+  background: rgba(16, 185, 129, 0.15);
   color: #10b981;
 }
 
@@ -275,13 +257,11 @@
   flex-wrap: wrap;
   gap: 8px;
   padding: 12px;
-  background: linear-gradient(135deg, rgba(22, 22, 42, 0.8) 0%, rgba(30, 30, 58, 0.8) 100%);
-  border: 1px solid rgba(42, 42, 62, 0.8);
+  background-color: #16162a;
+  border: 1px solid #2a2a3e;
   border-radius: 12px;
   min-height: 50px;
   align-items: center;
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
 }
 
 .tag {
@@ -294,7 +274,6 @@
   border-radius: 20px;
   font-size: 13px;
   font-weight: 500;
-  box-shadow: 0 2px 10px rgba(16, 185, 129, 0.3);
 }
 
 .tag-remove {

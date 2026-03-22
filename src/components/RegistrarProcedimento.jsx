@@ -1,334 +1,144 @@
-import React, { useState, useEffect } from "react";
-import "./RegistrarProcedimento.css";
+import React, { useState } from 'react';
+import { salvarProcedimento } from '../firestoreService';
+import { auth } from '../firebase';
+import './RegistrarProcedimento.css';
 
-const PROCEDIMENTOS = {
-  "Via Aérea": [
-    "Intubação Orotraqueal (IOT)",
-    "Intubação Nasotraqueal",
-    "Máscara Laríngea",
-    "Videolaringoscopia",
-    "Cricotireoidostomia",
-    "Intubação com Fibroscópio"
-  ],
-  "Neuroeixo": [
-    "Raquianestesia Lombar",
-    "Peridural Lombar",
-    "Peridural Torácica",
-    "Peridural Cervical",
-    "Combinada (Raqui + Peri)"
-  ],
-  "Bloqueios Regionais": "CUSTOM",
-  "Acessos Vasculares": [
-    "Acesso Venoso Central - Jugular Interna",
-    "Acesso Venoso Central - Subclávia",
-    "Acesso Venoso Central - Femoral",
-    "Punção Arterial - Radial",
-    "Punção Arterial - Femoral",
-    "Acesso Venoso Periférico Difícil",
-    "PICC"
-  ]
-};
-
-// Sugestões iniciais de bloqueios
-const BLOQUEIOS_SUGESTOES = [
-  "Plexo Braquial - Interescalênico",
-  "Plexo Braquial - Supraclavicular",
-  "Plexo Braquial - Infraclavicular",
-  "Plexo Braquial - Axilar",
-  "Nervo Femoral",
-  "Fáscia Ilíaca",
-  "Nervo Ciático - Poplíteo",
-  "Nervo Ciático - Subglúteo",
-  "Bloqueio de Tornozelo",
-  "TAP Block",
-  "Quadrado Lombar (QL)",
-  "PECS I",
-  "PECS II",
-  "Serrátil",
-  "Paravertebral",
-  "Eretor da Espinha (ESP)"
-];
-
-export function RegistrarProcedimento({ onSave }) {
-  const [categoria, setCategoria] = useState("");
-  const [procedimento, setProcedimento] = useState("");
-  const [bloqueioInput, setBloqueioInput] = useState("");
-  const [bloqueiosSalvos, setBloqueiosSalvos] = useState([]);
-  const [showSugestoes, setShowSugestoes] = useState(false);
-  const [sucesso, setSucesso] = useState(null);
-  const [tentativas, setTentativas] = useState(1);
-  const [observacoes, setObservacoes] = useState("");
-  const [tags, setTags] = useState([]);
-  const [tagInput, setTagInput] = useState("");
+export function RegistrarProcedimento() {
+  const [formData, setFormData] = useState({
+    tipo: '',
+    supervisor: '',
+    data: new Date().toISOString().split('T')[0],
+    observacoes: ''
+  });
   const [salvando, setSalvando] = useState(false);
   const [mensagem, setMensagem] = useState(null);
 
-  // Carregar bloqueios salvos do localStorage
-  useEffect(() => {
-    const salvos = JSON.parse(localStorage.getItem("bloqueiosSalvos") || "[]");
-    const todos = [...new Set([...BLOQUEIOS_SUGESTOES, ...salvos])];
-    setBloqueiosSalvos(todos);
-  }, []);
+  const tipos = [
+    'Geral',
+    'Neuroeixo', 
+    'Bloqueio de Nervos Periféricos',
+    'Sedação',
+    'IOT',
+    'Máscara Laríngea',
+    'Punção Venosa Central',
+    'Punção Arterial'
+  ];
 
-  // Filtrar sugestões baseado no input
-  const sugestoesFiltradas = bloqueiosSalvos.filter(b => 
-    b.toLowerCase().includes(bloqueioInput.toLowerCase())
-  );
-
-  const handleAddTag = (e) => {
-    if (e.key === 'Enter' || e.key === ',') {
-      e.preventDefault();
-      const novaTag = tagInput.trim().replace(',', '');
-      if (novaTag && !tags.includes(novaTag)) {
-        setTags([...tags, novaTag]);
-      }
-      setTagInput("");
-    }
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
   };
 
-  const handleRemoveTag = (tagToRemove) => {
-    setTags(tags.filter(t => t !== tagToRemove));
-  };
-
-  const handleSelectBloqueio = (bloqueio) => {
-    setBloqueioInput(bloqueio);
-    setProcedimento(bloqueio);
-    setShowSugestoes(false);
-  };
-
-  const handleBloqueioInputChange = (e) => {
-    const value = e.target.value;
-    setBloqueioInput(value);
-    setProcedimento(value);
-    setShowSugestoes(true);
-  };
-
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     
-    const procFinal = categoria === "Bloqueios Regionais" ? bloqueioInput : procedimento;
-    
-    if (!categoria || !procFinal || sucesso === null) {
-      setMensagem({ tipo: "erro", texto: "Preencha os campos obrigatórios!" });
+    if (!formData.tipo) {
+      setMensagem({ tipo: 'erro', texto: 'Selecione o tipo de procedimento!' });
       return;
     }
 
     setSalvando(true);
+    setMensagem(null);
 
-    // Se for um bloqueio novo, salvar na lista
-    if (categoria === "Bloqueios Regionais" && !bloqueiosSalvos.includes(bloqueioInput)) {
-      const novosSalvos = [...bloqueiosSalvos, bloqueioInput];
-      localStorage.setItem("bloqueiosSalvos", JSON.stringify(novosSalvos));
-      setBloqueiosSalvos(novosSalvos);
-    }
+    try {
+      const userId = auth.currentUser.uid;
+      await salvarProcedimento(userId, {
+        tipo: formData.tipo,
+        supervisor: formData.supervisor,
+        data: formData.data,
+        observacoes: formData.observacoes,
+        sucesso: true
+      });
 
-    const novoProcedimento = {
-      id: Date.now(),
-      categoria,
-      procedimento: procFinal,
-      sucesso,
-      tentativas,
-      observacoes,
-      tags,
-      data: new Date().toISOString()
-    };
+      setMensagem({ tipo: 'sucesso', texto: 'Procedimento salvo na nuvem! ☁️' });
+      
+      // Limpa o formulário
+      setFormData({
+        tipo: '',
+        supervisor: '',
+        data: new Date().toISOString().split('T')[0],
+        observacoes: ''
+      });
 
-    const dadosSalvos = JSON.parse(localStorage.getItem("procedimentos") || "[]");
-    dadosSalvos.push(novoProcedimento);
-    localStorage.setItem("procedimentos", JSON.stringify(dadosSalvos));
-
-    setTimeout(() => {
-      setCategoria("");
-      setProcedimento("");
-      setBloqueioInput("");
-      setSucesso(null);
-      setTentativas(1);
-      setObservacoes("");
-      setTags([]);
+    } catch (error) {
+      console.error("Erro:", error);
+      setMensagem({ tipo: 'erro', texto: 'Erro ao salvar. Tente novamente.' });
+    } finally {
       setSalvando(false);
-      setMensagem({ tipo: "sucesso", texto: "Procedimento registrado! ✅" });
-      
-      if (onSave) onSave(novoProcedimento);
-      
-      setTimeout(() => setMensagem(null), 3000);
-    }, 500);
+    }
   };
 
   return (
     <div className="registrar-container">
       <div className="registrar-header">
-        <h1 className="registrar-title">Registrar</h1>
-        <p className="registrar-subtitle">Novo procedimento</p>
+        <h1>Novo Procedimento</h1>
+        <p>Registre seu procedimento anestésico</p>
       </div>
 
-      {mensagem && (
-        <div className={`mensagem ${mensagem.tipo}`}>
-          {mensagem.texto}
-        </div>
-      )}
-
       <form onSubmit={handleSubmit} className="registrar-form">
-        
-        {/* Categoria */}
+        {mensagem && (
+          <div className={`mensagem ${mensagem.tipo}`}>
+            {mensagem.texto}
+          </div>
+        )}
+
         <div className="form-group">
-          <label className="form-label">Categoria *</label>
+          <label>Tipo de Procedimento *</label>
           <select 
-            className="form-select"
-            value={categoria}
-            onChange={(e) => {
-              setCategoria(e.target.value);
-              setProcedimento("");
-              setBloqueioInput("");
-            }}
+            name="tipo" 
+            value={formData.tipo} 
+            onChange={handleChange}
+            required
           >
             <option value="">Selecione...</option>
-            {Object.keys(PROCEDIMENTOS).map(cat => (
-              <option key={cat} value={cat}>{cat}</option>
+            {tipos.map(tipo => (
+              <option key={tipo} value={tipo}>{tipo}</option>
             ))}
           </select>
         </div>
 
-        {/* Procedimento - Select normal */}
-        {categoria && PROCEDIMENTOS[categoria] !== "CUSTOM" && (
-          <div className="form-group">
-            <label className="form-label">Procedimento *</label>
-            <select 
-              className="form-select"
-              value={procedimento}
-              onChange={(e) => setProcedimento(e.target.value)}
-            >
-              <option value="">Selecione...</option>
-              {PROCEDIMENTOS[categoria].map(proc => (
-                <option key={proc} value={proc}>{proc}</option>
-              ))}
-            </select>
-          </div>
-        )}
-
-        {/* Bloqueios - Campo com autocomplete */}
-        {categoria === "Bloqueios Regionais" && (
-          <div className="form-group">
-            <label className="form-label">Nome do Bloqueio *</label>
-            <p className="form-hint">Digite ou selecione da lista</p>
-            <div className="autocomplete-container">
-              <input
-                type="text"
-                className="form-input"
-                placeholder="Ex: Plexo Braquial - Axilar"
-                value={bloqueioInput}
-                onChange={handleBloqueioInputChange}
-                onFocus={() => setShowSugestoes(true)}
-                onBlur={() => setTimeout(() => setShowSugestoes(false), 200)}
-              />
-              {showSugestoes && sugestoesFiltradas.length > 0 && (
-                <div className="sugestoes-dropdown">
-                  {sugestoesFiltradas.slice(0, 8).map((sug, idx) => (
-                    <div 
-                      key={idx} 
-                      className="sugestao-item"
-                      onMouseDown={() => handleSelectBloqueio(sug)}
-                    >
-                      {sug}
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* Resultado */}
         <div className="form-group">
-          <label className="form-label">Resultado *</label>
-          <div className="radio-group">
-            <button
-              type="button"
-              className={`radio-btn sucesso ${sucesso === true ? 'selected' : ''}`}
-              onClick={() => setSucesso(true)}
-            >
-              ✅ Sucesso
-            </button>
-            <button
-              type="button"
-              className={`radio-btn falha ${sucesso === false ? 'selected' : ''}`}
-              onClick={() => setSucesso(false)}
-            >
-              ❌ Insucesso
-            </button>
-          </div>
-        </div>
-
-        {/* Tentativas */}
-        <div className="form-group">
-          <label className="form-label">Tentativas</label>
-          <div className="tentativas-control">
-            <button 
-              type="button" 
-              className="tentativas-btn"
-              onClick={() => setTentativas(Math.max(1, tentativas - 1))}
-            >
-              −
-            </button>
-            <span className="tentativas-valor">{tentativas}</span>
-            <button 
-              type="button" 
-              className="tentativas-btn"
-              onClick={() => setTentativas(tentativas + 1)}
-            >
-              +
-            </button>
-          </div>
-        </div>
-
-        {/* Tags */}
-        <div className="form-group">
-          <label className="form-label">Tags</label>
-          <p className="form-hint">Pressione Enter para adicionar</p>
-          <div className="tags-container">
-            {tags.map((tag, idx) => (
-              <span key={idx} className="tag">
-                {tag}
-                <button 
-                  type="button" 
-                  className="tag-remove"
-                  onClick={() => handleRemoveTag(tag)}
-                >
-                  ×
-                </button>
-              </span>
-            ))}
-            <input
-              type="text"
-              className="tag-input"
-              placeholder={tags.length === 0 ? "Ex: difícil, obeso, urgência..." : ""}
-              value={tagInput}
-              onChange={(e) => setTagInput(e.target.value)}
-              onKeyDown={handleAddTag}
-            />
-          </div>
-        </div>
-
-        {/* Observações */}
-        <div className="form-group">
-          <label className="form-label">Observações</label>
-          <textarea
-            className="form-textarea"
-            placeholder="Detalhes adicionais..."
-            value={observacoes}
-            onChange={(e) => setObservacoes(e.target.value)}
-            rows={3}
+          <label>Data</label>
+          <input 
+            type="date" 
+            name="data" 
+            value={formData.data} 
+            onChange={handleChange}
           />
         </div>
 
-        {/* Botão Submit */}
+        <div className="form-group">
+          <label>Supervisor (opcional)</label>
+          <input 
+            type="text" 
+            name="supervisor" 
+            value={formData.supervisor} 
+            onChange={handleChange}
+            placeholder="Nome do supervisor"
+          />
+        </div>
+
+        <div className="form-group">
+          <label>Observações (opcional)</label>
+          <textarea 
+            name="observacoes" 
+            value={formData.observacoes} 
+            onChange={handleChange}
+            placeholder="Detalhes do procedimento..."
+            rows="3"
+          />
+        </div>
+
         <button 
           type="submit" 
-          className="submit-btn"
+          className="btn-salvar"
           disabled={salvando}
         >
-          {salvando ? "Salvando..." : "💾 Salvar"}
+          {salvando ? 'Salvando...' : '💾 Salvar Procedimento'}
         </button>
-
       </form>
     </div>
   );
